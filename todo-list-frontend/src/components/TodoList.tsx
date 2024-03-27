@@ -1,8 +1,8 @@
-// TodoList.tsx
-
+// TodoList.ts
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './TodoList.css';
+import { fetchTodos, addTodo, deleteTodo, updateTodoStatus } from '../action/todo'; // Імпорт функцій дій з todo
+import styles from './todo.module.css';
+
 
 interface Todo {
   id: number;
@@ -13,80 +13,72 @@ interface Todo {
 const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState<string>('');
+  
 
   useEffect(() => {
-    fetchTodos();
+    fetchTodoList();
   }, []);
 
-  const fetchTodos = async () => {
+  const fetchTodoList = async () => {
     try {
-      const response = await axios.get<Todo[]>('http://localhost:3000/todo');
-      setTodos(response.data);
+      const todoList = await fetchTodos();
+      setTodos(todoList);
     } catch (error) {
       console.error('Error fetching todos:', error);
     }
   };
 
-  const addTodo = async () => {
+  const handleAddTodo = async () => {
     try {
-      await axios.post('http://localhost:3000/todo', {
-        title: newTodo,
-        status: 'pending',
-      });
+      await addTodo(newTodo);
       setNewTodo('');
-      fetchTodos();
+      fetchTodoList();
     } catch (error) {
       console.error('Error adding todo:', error);
     }
   };
 
-  const deleteTodo = async (id: number) => {
+  const handleDeleteTodo = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:3000/todo/${id}`);
-      fetchTodos();
+      await deleteTodo(id);
+      fetchTodoList();
     } catch (error) {
       console.error('Error deleting todo:', error);
     }
   };
 
-  const updateTodoStatus = async (todoId: number, newStatus: string) => {
+  const handleUpdateTodoStatus = async (todoId: number, newStatus: string) => {
     try {
-      await axios.patch(`http://localhost:3000/todo/${todoId}/status`, { status: newStatus });
-      fetchTodos();
+      await updateTodoStatus(todoId, newStatus);
+      fetchTodoList();
     } catch (error) {
       console.error('Error updating todo status:', error);
     }
   };
 
   return (
-    <div className="todo-container">
+    <div className={styles.todoContainer}>
       <h1>Todo List</h1>
       <input
         type="text"
-        className="todo-input"
+        className={styles.todoInput}
         placeholder="Enter new todo"
         value={newTodo}
         onChange={(e) => setNewTodo(e.target.value)}
       />
-      <button className="add-todo-button" 
-      onClick={addTodo} 
-      disabled={!newTodo.trim()}
-      style={{ cursor: !newTodo.trim() ? 'not-allowed' : 'pointer' }}>Add Todo</button>
-      
-      <ul className="todo-list">
+      <button className={styles.addTodoButton} onClick={handleAddTodo} disabled={!newTodo.trim()}>Add Todo</button>
+      <ul className={styles.todoList}>
         {todos.map((todo) => (
-          <li key={todo.id} className="todo-item">
+          <li key={todo.id} className={styles.todoItem}>
+            <span className={styles.todoItemContent}>{todo.title} - {todo.status}</span>
             
-            <span>{todo.title} - {todo.status}</span>
-            <div className="todo-button">
             {todo.status === 'pending' && (
-              <button onClick={() => updateTodoStatus(todo.id, 'in_progress')}>Start</button>
+              <button className={styles.todoItemButton} onClick={() => handleUpdateTodoStatus(todo.id, 'in_progress')}>Start</button>
             )}
             {todo.status === 'in_progress' && (
-              <button onClick={() => updateTodoStatus(todo.id, 'completed')}>Complete</button>
+              <button className={styles.todoItemButton} onClick={() => handleUpdateTodoStatus(todo.id, 'completed')}>Complete</button>
             )}
-            <button className="delete-button" onClick={() => deleteTodo(todo.id)}>Delete</button>
-            </div>
+            <button className={styles.deleteButton} onClick={() => handleDeleteTodo(todo.id)}>Delete</button>
           </li>
         ))}
       </ul>
